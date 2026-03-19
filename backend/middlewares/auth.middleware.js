@@ -7,9 +7,7 @@ const verifyToken = (req, res, next) => {
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return res.status(401).json({ success: false, message: 'Vui lòng đăng nhập để thực hiện chức năng này!' });
     }
-
     const token = authHeader.split(' ')[1]; // Cắt chữ 'Bearer ' đi lấy mỗi mã token
-
     try {
         // Giải mã token xem có hợp lệ và còn hạn không
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
