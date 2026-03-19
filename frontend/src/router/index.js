@@ -21,12 +21,27 @@ const routes = [
             name: 'Quản lý nhân viên',
             component: () => import('../modules/hr/NhanVien.vue')
         },
-        // Thêm vào ngay dưới route hr/employees
         {
             path: '/sales/pos', 
             name: 'Bán hàng (POS)',
             component: () => import('../modules/sales/Pos.vue')
-        }
+        },
+        {
+            path: '/inventory/stock', 
+            name: 'Nhập kho',
+            component: () => import('../modules/inventory/NhapKho.vue')
+        },
+        {
+            path: '/inventory/history',
+            name: 'Lịch sử nhập kho',
+            component: () => import('../modules/inventory/LichSuNhap.vue')
+        },
+        {
+            path: '/inventory/products', 
+            name: 'Danh mục Sản phẩm',
+            component: () => import('../modules/inventory/SanPham.vue')
+        },
+        
         // Các trang khác của phân hệ HR, Sales... sẽ khai báo thêm ở đây
         ],
         meta: { requiresAuth: true }

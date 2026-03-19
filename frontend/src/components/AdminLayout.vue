@@ -12,7 +12,7 @@
             class="border-none flex-1"
             default-active="1"
             text-color="#94a3b8"
-            router
+            router :default-active="$route.path"
         >
             <el-sub-menu index="sales">
             <template #title>
@@ -81,7 +81,7 @@
         </header>
 
         <main class="flex-1 overflow-y-auto p-8 bg-gray-50">
-            <router-view v-slot="{ Component }">
+            <router-view :key="$route.fullPath" v-slot="{ Component }">
             <transition name="fade" mode="out-in">
                 <component :is="Component" />
             </transition>

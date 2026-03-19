@@ -182,17 +182,17 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 
 // --- MOCK DATABASE ---
 const dbSanPham = [
-  { maSP: 'MAC_AIR_M2', tenSP: 'MacBook Air M2 13 inch', cauHinhSP: 'Apple M2 / 8GB / 256GB', giaBan: 26490000 },
-  { maSP: 'ASUS_ROG_G15', tenSP: 'Asus ROG Strix G15', cauHinhSP: 'Ryzen 7 / 16GB / RTX 3060', giaBan: 32990000 },
-  { maSP: 'DELL_XPS_13', tenSP: 'Dell XPS 13 Plus 9320', cauHinhSP: 'Core i7 / 16GB / 512GB', giaBan: 45000000 },
+  { maSP: 1, tenSP: 'MacBook Air M2 13 inch', cauHinhSP: 'Apple M2 / 8GB / 256GB', giaBan: 26490000 },
+  { maSP: 2, tenSP: 'Asus ROG Strix G15', cauHinhSP: 'Ryzen 7 / 16GB / RTX 3060', giaBan: 32990000 },
+  { maSP: 3, tenSP: 'Dell XPS 13 Plus 9320', cauHinhSP: 'Core i7 / 16GB / 512GB', giaBan: 45000000 },
 ];
 
 const dbMayTinh = ref([
-  { maMay: 'SN-MAC-001', maSP: 'MAC_AIR_M2', maHoaDon: null, trangThai: 'Sẵn sàng' },
-  { maMay: 'SN-MAC-002', maSP: 'MAC_AIR_M2', maHoaDon: null, trangThai: 'Sẵn sàng' },
-  { maMay: 'SN-MAC-003', maSP: 'MAC_AIR_M2', maHoaDon: null, trangThai: 'Sẵn sàng' },
-  { maMay: 'SN-ASUS-999', maSP: 'ASUS_ROG_G15', maHoaDon: null, trangThai: 'Sẵn sàng' },
-  { maMay: 'SN-DELL-555', maSP: 'DELL_XPS_13', maHoaDon: 'HD-1001', trangThai: 'Đã bán' },
+  { maMay: 'SN-MAC-001', maSP: 1, maHoaDon: null, trangThai: 'Sẵn sàng' },
+  { maMay: 'SN-MAC-002', maSP: 1, maHoaDon: null, trangThai: 'Sẵn sàng' },
+  { maMay: 'SN-MAC-003', maSP: 1, maHoaDon: null, trangThai: 'Sẵn sàng' },
+  { maMay: 'SN-ASUS-999', maSP: 2, maHoaDon: null, trangThai: 'Sẵn sàng' },
+  { maMay: 'SN-DELL-555', maSP: 3, maHoaDon: 'HD-1001', trangThai: 'Đã bán' },
 ]);
 
 const dbKhachHang = [
@@ -224,7 +224,7 @@ onMounted(() => {
 const filteredProducts = computed(() => {
   return dbSanPham.filter(sp => {
     const matchSearch = sp.tenSP.toLowerCase().includes(searchQuery.value.toLowerCase()) || 
-                        sp.maSP.toLowerCase().includes(searchQuery.value.toLowerCase());
+                        sp.maSP.toString().includes(searchQuery.value);
     
     if (matchSearch) {
       const cacMayTrongKho = dbMayTinh.value.filter(mt => mt.maSP === sp.maSP && mt.maHoaDon === null);
