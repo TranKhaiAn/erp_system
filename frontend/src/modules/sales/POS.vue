@@ -6,7 +6,7 @@
       <div class="p-4 bg-white shadow-sm z-10 flex gap-4 items-center border-b-4 border-blue-500">
         <el-input 
           v-model="scanInput" 
-          placeholder="TÍT MÃ VẠCH: Nhập Serial Number (maMay) và nhấn Enter..." 
+          placeholder="Quét MÃ VẠCH: Nhập Serial Number (maMay) và nhấn Enter..." 
           :prefix-icon="FullScreen"
           class="flex-1 !text-lg custom-scan-input"
           size="large"
@@ -92,7 +92,7 @@
         <div v-if="cart.length === 0" class="h-full flex flex-col items-center justify-center text-slate-400 opacity-60">
           <el-icon class="text-6xl mb-4"><ShoppingCart /></el-icon>
           <p class="text-lg">Chưa quét mã vạch nào</p>
-          <p class="text-sm">Tít Serial Number để thêm vào hóa đơn</p>
+          <p class="text-sm">Quét Serial Number để thêm vào hóa đơn</p>
         </div>
 
         <div 
@@ -287,7 +287,7 @@ const handleScanBarcode = () => {
   const thongTinSP = dbSanPham.find(sp => sp.maSP === mayTimThay.maSP);
   addItemToCart(thongTinSP, mayTimThay.maMay);
   
-  ElMessage.success(`Đã tít thành công: ${serialScanned}`);
+  ElMessage.success(`Đã quét thành công: ${serialScanned}`);
   scanInput.value = ''; 
   if (scanInputRef.value) scanInputRef.value.focus();
 };

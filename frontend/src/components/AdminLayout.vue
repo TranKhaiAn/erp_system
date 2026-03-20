@@ -38,8 +38,9 @@
                     <el-icon><UserFilled /></el-icon>
                     <span>Nhân Sự & Lương</span>
                 </template>
+                <el-menu-item index="/hr/checkin">Chấm công</el-menu-item>
                 <el-menu-item index="/hr/employees">Quản lý nhân viên</el-menu-item>
-                <el-menu-item index="/hr/attendance">Chấm công</el-menu-item>
+                <el-menu-item index="/hr/attendance">Quản lý chấm công</el-menu-item>
                 <el-menu-item index="/hr/payroll">Bảng tính lương</el-menu-item>
             </el-sub-menu>
 
