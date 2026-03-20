@@ -10,7 +10,7 @@
     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-wrap gap-4 items-center">
       <el-input 
         v-model="searchQuery" 
-        placeholder="Tít mã vạch hoặc nhập Serial..." 
+        placeholder="Quét mã vạch hoặc nhập Serial..." 
         :prefix-icon="FullScreen"
         class="!w-72 font-mono"
         clearable

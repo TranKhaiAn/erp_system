@@ -57,7 +57,7 @@
             <div class="flex gap-3 mb-4">
               <el-input 
                 v-model="scanSerial" 
-                placeholder="Tít mã vạch Serial và nhấn Enter..." 
+                placeholder="Quét mã vạch Serial và nhấn Enter..." 
                 size="large" class="flex-1 font-mono" @keyup.enter="addSerial" :prefix-icon="FullScreen"
               />
               <el-button type="success" plain size="large" @click="addSerial">Thêm Serial</el-button>

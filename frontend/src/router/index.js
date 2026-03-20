@@ -45,7 +45,22 @@ const routes = [
             path: '/inventory/serial',
             name: 'Quản lý Serial',
             component: () => import('../modules/inventory/Serial.vue')
-        }
+        },
+        {
+            path: '/sales/orders',
+            name: 'Quản lý Hóa đơn',
+            component: () => import('../modules/sales/HoaDon.vue')
+        },
+        {
+            path: '/hr/attendance',
+            name: 'Chấm Công',
+            component: () => import('../modules/hr/ChamCong.vue')
+        },
+        {
+            path: '/hr/checkin',
+            name: 'Portal Chấm Công',
+            component: () => import('../modules/hr/CheckIn.vue')
+        },
         // Các trang khác của phân hệ HR, Sales... sẽ khai báo thêm ở đây
         ],
         meta: { requiresAuth: true }
