@@ -71,6 +71,21 @@ const routes = [
             name: 'Cấu hình Hệ thống',
             component: () => import('../modules/settings/Settings.vue')
         },
+        {
+            path: '/auth/accounts',
+            name: 'Quản lý Tài Khoản',
+            component: () => import('../modules/auth/TaiKhoan.vue')
+        },
+        {
+            path: '/profile',
+            name: 'Hồ sơ Cá nhân',
+            component: () => import('../modules/profile/Profile.vue')
+        },
+        {
+            path: '/hr/leaves',
+            name: 'Quản lý Đơn từ',
+            component: () => import('../modules/hr/DonTu.vue')
+        },
         // Các trang khác của phân hệ HR, Sales... sẽ khai báo thêm ở đây
         ],
         meta: { requiresAuth: true }

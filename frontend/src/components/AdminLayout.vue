@@ -42,11 +42,17 @@
                 <el-menu-item index="/hr/employees">Quản lý nhân viên</el-menu-item>
                 <el-menu-item index="/hr/attendance">Quản lý chấm công</el-menu-item>
                 <el-menu-item index="/hr/payroll">Bảng tính lương</el-menu-item>
+                <el-menu-item index="/hr/leaves"><span>Quản lý Đơn từ</span></el-menu-item>
             </el-sub-menu>
 
             <el-menu-item index="/settings">
                 <el-icon><Setting /></el-icon>
                 <span>Cấu hình hệ thống</span>
+            </el-menu-item>
+
+            <el-menu-item index="/auth/accounts">
+                <el-icon><User /></el-icon>
+                <span>Quản lý Tài khoản</span>
             </el-menu-item>
         </el-menu>
 
@@ -56,39 +62,44 @@
         </aside>
 
         <div class="flex-1 flex flex-col overflow-hidden">
-        <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 shadow-sm">
-            <div class="text-gray-500 font-medium capitalize">
-            {{ $route.name || 'Dashboard' }}
-            </div>
+            <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 shadow-sm">
+                <div class="text-gray-500 font-medium capitalize">
+                {{ $route.name || 'Dashboard' }}
+                </div>
 
-            <div class="flex items-center gap-4">
-            <div class="text-right mr-2">
-                <p class="text-sm font-bold text-gray-700">{{ authStore.getUserName }}</p>
-                <p class="text-xs text-gray-400">Quản trị viên</p>
-            </div>
-            <el-dropdown trigger="click">
-                <el-avatar :size="40" class="cursor-pointer bg-blue-500">
-                {{ authStore.getUserName.charAt(0) }}
-                </el-avatar>
-                <template #dropdown>
-                <el-dropdown-menu>
-                    <el-dropdown-item>Hồ sơ cá nhân</el-dropdown-item>
-                    <el-dropdown-item divided @click="handleLogout" class="text-red-500">
-                    Đăng xuất
-                    </el-dropdown-item>
-                </el-dropdown-menu>
-                </template>
-            </el-dropdown>
-            </div>
-        </header>
+                <div class="flex items-center gap-4">
+                    <div class="text-right mr-2">
+                        <p class="text-sm font-bold text-gray-700">{{ authStore.getUserName }}</p>
+                        <p class="text-xs text-gray-400">Quản trị viên</p>
+                    </div>
+                    <el-dropdown trigger="click">
+                        <el-avatar :size="40" class="cursor-pointer bg-blue-500 font-bold text-white">
+                            {{ authStore.getUserName.charAt(0) }}
+                        </el-avatar>
+                        <template #dropdown>
+                            <el-dropdown-menu>
+                            
+                                <el-dropdown-item @click="$router.push('/profile')">
+                                    <el-icon><User /></el-icon> Hồ sơ cá nhân
+                                </el-dropdown-item>
+                                
+                                <el-dropdown-item divided @click="handleLogout" class="text-red-500 font-bold">
+                                    <el-icon><SwitchButton /></el-icon> Đăng xuất
+                                </el-dropdown-item>
+                            
+                            </el-dropdown-menu>
+                        </template>
+                    </el-dropdown>
+                </div>
+            </header>
 
-        <main class="flex-1 overflow-y-auto p-8 bg-gray-50">
-            <router-view :key="$route.fullPath" v-slot="{ Component }">
-            <transition name="fade" mode="out-in">
-                <component :is="Component" />
-            </transition>
-            </router-view>
-        </main>
+            <main class="flex-1 overflow-y-auto p-8 bg-gray-50">
+                <router-view :key="$route.fullPath" v-slot="{ Component }">
+                <transition name="fade" mode="out-in">
+                    <component :is="Component" />
+                </transition>
+                </router-view>
+            </main>
         </div>
     </div>
 </template>
@@ -96,7 +107,7 @@
 <script setup>
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../modules/auth/auth.store';
-import { Monitor, ShoppingCart, Box, UserFilled, Setting } from '@element-plus/icons-vue';
+import { Monitor, ShoppingCart, Box, UserFilled, Setting, User } from '@element-plus/icons-vue';
 
 const router = useRouter();
 const authStore = useAuthStore();
