@@ -154,7 +154,9 @@ import { Box, FullScreen, DocumentAdd, Delete, Check, List } from '@element-plus
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { useRouter } from 'vue-router';
 import api from '../../services/api';
+import { useAuthStore } from '../auth/auth.store';
 
+const authStore = useAuthStore();
 const router = useRouter();
 
 // --- STATE ---
@@ -236,7 +238,7 @@ const submitPhieuNhap = () => {
       // Đóng gói Payload theo đúng yêu cầu của Backend mới
       const payload = {
         maNCC: phieuNhap.maNCC,
-        maNhanVien: 1, 
+        maNhanVien: authStore.user?.maNhanVien || authStore.user?.id || 1,
         tongTien: totalCost.value,
         danhSachSanPham: phieuNhap.items.map(item => ({
           maSP: item.maSP,

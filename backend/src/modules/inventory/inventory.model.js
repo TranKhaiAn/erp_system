@@ -174,6 +174,27 @@ const InventoryModel = {
         try {
             await connection.beginTransaction();
             
+            // 0. KIỂM TRA TRÙNG LẶP SERIAL (THÊM MỚI)
+            let allIncomingSerials = [];
+            for (let item of danhSachSanPham) {
+                if (item.serials) {
+                    allIncomingSerials.push(...item.serials);
+                }
+            }
+
+            if (allIncomingSerials.length > 0) {
+                // Quét Database xem có thằng nào trùng với đám serial sắp nhập không
+                const sqlCheckDup = `SELECT maMay FROM maytinh WHERE maMay IN (?)`;
+                const [dupRows] = await connection.query(sqlCheckDup, [allIncomingSerials]);
+
+                if (dupRows.length > 0) {
+                    // Lấy ra danh sách các mã bị trùng
+                    const dupMACS = dupRows.map(r => r.maMay).join(', ');
+                    // Quăng lỗi có đánh dấu riêng để Controller bắt
+                    throw new Error(`DUP_SERIAL:${dupMACS}`); 
+                }
+            }
+            
             // 1. Tạo phiếu nhập
             const sqlPhieuNhap = `INSERT INTO phieunhap (maNCC, maNhanVien, ngayNhap, tongTien) VALUES (?, ?, NOW(), ?)`;
             const [resultPhieuNhap] = await connection.query(sqlPhieuNhap, [maNCC, maNhanVien, tongTien]);
