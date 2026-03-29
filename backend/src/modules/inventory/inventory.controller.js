@@ -171,6 +171,16 @@ const InventoryController = {
                 tongTien: tongTien
             });
         } catch (error) {
+            // BẮT LỖI TRÙNG SERIAL TỪ MODEL NÉM LÊN
+            if (error.message && error.message.startsWith('DUP_SERIAL:')) {
+                const dups = error.message.split(':')[1];
+                return res.status(400).json({
+                    success: false,
+                    message: `THẤT BẠI! Các mã Serial sau đã tồn tại trong hệ thống: ${dups}. Vui lòng kiểm tra lại!`
+                });
+            }
+
+            // Lỗi hệ thống khác
             console.error("Lỗi API Nhập kho:", error);
             res.status(500).json({
                 success: false,

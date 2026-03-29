@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import api from '../../services/api'; // Trỏ đúng về file api.js xịn xò của bạn
+import api from '../../services/api'; 
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
