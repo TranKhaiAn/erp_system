@@ -10,6 +10,12 @@ const routes = [
         component: () => import('../modules/auth/login.vue')
     },
     {
+        path: '/print-payslip',
+        name: 'In phiếu lương',
+        component: () => import('../modules/profile/PrintPayslip.vue'),
+        meta: { requiresAuth: true } 
+    },
+    {
         path: '/',
         component: () => import('../components/AdminLayout.vue'), 
         children: [
@@ -128,7 +134,7 @@ const routes = [
             name: 'Quản lý Chức vụ', 
             component: () => import('../modules/hr/ChucVu.vue'),
             meta: { permission: CHUCNANG.PHAN_QUYEN } 
-        }
+        },
         ],
         meta: { requiresAuth: true }
     },

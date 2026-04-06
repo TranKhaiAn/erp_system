@@ -112,7 +112,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { useAuthStore } from './auth.store'; 
+import { useAuthStore } from '../auth/auth.store'; 
 import { ElMessage } from 'element-plus';
 import { Monitor, User, Lock } from '@element-plus/icons-vue';
 import { CHUCNANG } from '../../utils/constants';
@@ -145,11 +145,9 @@ const handleLogin = async (formEl) => {
       isLoading.value = true;
       try {
         await authStore.login(loginForm.username, loginForm.password, rememberMe.value);
-        ElMessage.success(`Đăng nhập thành công! Chào mừng ${authStore.user?.hoTen || ''}`);
+        ElMessage.success(`Đăng nhập thành công! Chào mừng ${authStore.user?.hoten || authStore.user?.username || 'Người dùng' }`);
         
-        // 👉 ĐÃ FIX LOGIC ĐIỀU HƯỚNG THEO QUYỀN (Không phụ thuộc maNhomQuyen)
         // Hệ thống sẽ thử từng "Cửa" theo thứ tự ưu tiên. Cửa nào mở (có quyền xem) thì nhảy vào.
-        
         if (authStore.hasPermission(CHUCNANG.POS)) {
           // Bán hàng/Thu ngân ưu tiên vào POS luôn cho nhanh
           router.push('/sales/pos');
@@ -168,7 +166,8 @@ const handleLogin = async (formEl) => {
         }
 
       } catch (error) {
-        ElMessage.error(error.response?.data?.message || error.message || 'Sai tài khoản hoặc mật khẩu!');
+        ElMessage.error(error.message);
+        loginForm.password = '';
       } finally {
         isLoading.value = false;
       }

@@ -8,10 +8,15 @@ const AuthController = {
     login: async (req, res) => {
         try {
             const { username, password } = req.body;
-            if (!username || !password) return res.status(400).json({ success: false, message: 'Vui lòng nhập tài khoản và mật khẩu!' });
+            if (!username || !password) {
+                return res.status(400).json({ success: false, message: 'Vui lòng nhập tài khoản và mật khẩu!' });
+            }
             
             const user = await AuthModel.findByUsername(username);
-            if (!user) return res.status(401).json({ success: false, message: 'Tài khoản không tồn tại!' });
+            
+            if (!user) {
+                return res.status(401).json({ success: false, message: 'Tài khoản hoặc mật khẩu không đúng!' });
+            }
 
             // Kiểm tra xem tài khoản có bị Admin khóa (tk.trangThai) 
             // hoặc Nhân viên đã nghỉ việc (nv.trangThai) hay không
@@ -22,7 +27,9 @@ const AuthController = {
                 });
             }
 
-            if (password !== user.password) return res.status(401).json({ success: false, message: 'Mật khẩu không đúng!' });
+            if (password !== user.password) {
+                return res.status(401).json({ success: false, message: 'Tài khoản hoặc mật khẩu không đúng!' });
+            }
 
             const rawPermissions = await AuthModel.getPermissions(user.maNhomQuyen);
             const permissionsMap = {};
@@ -33,7 +40,13 @@ const AuthController = {
             const token = jwt.sign({ maNhanVien: user.maNhanVien, maNhomQuyen: user.maNhomQuyen }, process.env.JWT_SECRET, { expiresIn: '1d' });
             delete user.password;
             
-            res.status(200).json({ success: true, message: 'Đăng nhập thành công!', token: token, user: { ...user, permissions: permissionsMap }});
+            res.status(200).json({ 
+                success: true, 
+                message: 'Đăng nhập thành công!', 
+                token: token, 
+                user: { ...user, permissions: permissionsMap }
+            });
+            
         } catch (error) {
             console.error("Lỗi đăng nhập:", error);
             res.status(500).json({ success: false, message: 'Lỗi máy chủ khi đăng nhập!' });
