@@ -131,24 +131,53 @@
       </el-tab-pane>
 
       <el-tab-pane label="PHIẾU LƯƠNG (PAYSLIP)" name="payslip">
-        <div class="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div 
-            v-for="slip in myPayslips" :key="slip.maLuong" 
-            class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer relative overflow-hidden"
-            @click="openPayslipDetail(slip)"
-          >
-            <div class="absolute top-0 right-0 bg-emerald-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">Đã thanh toán</div>
-            <div class="flex items-center gap-3 mb-4">
-              <div class="p-3 bg-blue-50 text-blue-600 rounded-xl"><el-icon class="text-2xl"><Money /></el-icon></div>
-              <div>
-                <p class="text-sm text-slate-500 font-semibold">Kỳ lương tháng</p>
-                <p class="text-xl font-bold text-slate-800">{{ slip.thang }}/{{ slip.nam }}</p>
+        <div class="p-4">
+          <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <div class="flex items-center gap-3">
+              <span class="font-bold text-slate-700">Lọc theo năm:</span>
+              <el-date-picker
+                v-model="selectedPayslipYear"
+                type="year"
+                placeholder="Chọn năm"
+                format="YYYY"
+                value-format="YYYY"
+                :clearable="true"
+                class="!w-32"
+              />
+            </div>
+            
+            <el-button type="success" :icon="Printer" @click="printYearlySummary" class="font-bold" plain>
+              IN TỔNG KẾT NĂM {{ selectedPayslipYear || '' }}
+            </el-button>
+          </div>
+
+          <div id="printable-year-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="print-only-title hidden text-2xl font-black text-center w-full col-span-full mb-4">
+              BẢNG TỔNG HỢP LƯƠNG NĂM {{ selectedPayslipYear || new Date().getFullYear() }} - NV: {{ currentUser.hoTen }}
+            </div>
+
+            <div 
+              v-for="slip in filteredPayslips" :key="slip.maLuong" 
+              class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer relative overflow-hidden"
+              @click="openPayslipDetail(slip)"
+            >
+              <div class="absolute top-0 right-0 bg-emerald-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">Đã thanh toán</div>
+              <div class="flex items-center gap-3 mb-4">
+                <div class="p-3 bg-blue-50 text-blue-600 rounded-xl"><el-icon class="text-2xl"><Money /></el-icon></div>
+                <div>
+                  <p class="text-sm text-slate-500 font-semibold">Kỳ lương tháng</p>
+                  <p class="text-xl font-bold text-slate-800">{{ slip.thang }}/{{ slip.nam }}</p>
+                </div>
+              </div>
+              <div class="flex justify-between items-end border-t border-slate-100 pt-3">
+                <span class="text-sm text-slate-500">Thực lãnh:</span>
+                <span class="text-xl font-black text-blue-600">{{ formatPrice(slip.thucLanh) }}</span>
               </div>
             </div>
-            <div class="flex justify-between items-end border-t border-slate-100 pt-3">
-              <span class="text-sm text-slate-500">Thực lãnh:</span>
-              <span class="text-xl font-black text-blue-600">{{ formatPrice(slip.thucLanh) }}</span>
-            </div>
+          </div>
+          
+          <div v-if="filteredPayslips.length === 0" class="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-300 mt-4">
+            <p class="text-slate-500 font-medium">Không tìm thấy dữ liệu lương trong năm này</p>
           </div>
         </div>
       </el-tab-pane>
@@ -219,13 +248,13 @@
     </el-dialog>
 
     <el-dialog v-model="dialogPayslipVisible" :title="`CHI TIẾT PHIẾU LƯƠNG THÁNG ${selectedPayslip?.thang}/${selectedPayslip?.nam}`" width="650px" class="custom-dialog payslip-dialog">
-      <div v-if="selectedPayslip" class="p-2 space-y-5">
+      <div id="printable-payslip" v-if="selectedPayslip" class="p-2 space-y-5">
         
         <div class="text-center border-b border-dashed border-slate-300 pb-4">
           <h2 class="font-black text-2xl text-slate-800 uppercase tracking-wide">Laptop Store ERP</h2>
           <p class="text-sm text-slate-500 mt-1">Phiếu Lương Cá Nhân - Bảo Mật</p>
           
-          <div class="mt-5 text-left bg-gradient-to-r from-slate-50 to-blue-50/30 p-4 rounded-xl flex justify-between items-center border border-slate-100">
+          <div class="mt-5 text-left bg-gradient-to-r from-slate-50 to-blue-50/30 p-4 rounded-xl flex justify-between items-center border border-slate-100 print-border">
             <div>
               <p class="font-bold text-lg text-slate-800">{{ currentUser.hoTen }}</p>
               <p class="text-sm text-slate-500 mt-0.5">Mã NV: <span class="font-semibold text-slate-700">{{ currentUser.maNhanVien }}</span> • {{ currentUser.tenChucVu }}</p>
@@ -237,7 +266,7 @@
           </div>
         </div>
 
-        <div class="bg-emerald-50/50 p-4 rounded-xl border border-emerald-100">
+        <div class="bg-emerald-50/50 p-4 rounded-xl border border-emerald-100 print-border">
           <h3 class="font-bold text-emerald-800 border-b border-emerald-200 pb-2 mb-3 flex items-center gap-2">
             <el-icon><Plus /></el-icon> 1. CÁC KHOẢN THU NHẬP 
           </h3>
@@ -273,7 +302,7 @@
           </div>
         </div>
 
-        <div class="bg-rose-50/50 p-4 rounded-xl border border-rose-100">
+        <div class="bg-rose-50/50 p-4 rounded-xl border border-rose-100 print-border">
           <h3 class="font-bold text-rose-800 border-b border-rose-200 pb-2 mb-3 flex items-center gap-2">
             <el-icon><Minus /></el-icon> 2. CÁC KHOẢN KHẤU TRỪ
           </h3>
@@ -293,14 +322,14 @@
             <div class="flex justify-between items-center">
               <div>
                 <p class="text-slate-700 font-semibold text-sm">Khấu trừ Bảo hiểm (BHXH, BHYT)</p>
-                <p class="text-xs text-slate-500 italic mt-0.5">Trích % theo mức lương cơ sở quy định</p>
+                <p class="text-xs text-slate-500 italic mt-0.5">Trích % theo mức lương cơ sở</p>
               </div>
               <span class="font-bold text-rose-600">- {{ formatPrice(selectedPayslip.truBaoHiem) }}</span>
             </div>
           </div>
         </div>
 
-        <div class="bg-blue-600 p-5 rounded-xl text-white mt-4 flex justify-between items-center shadow-md shadow-blue-500/30">
+        <div class="bg-blue-600 p-5 rounded-xl text-white mt-4 flex justify-between items-center shadow-md shadow-blue-500/30 print-highlight">
           <div>
             <p class="text-blue-100 text-sm font-medium">TỔNG TIỀN THỰC LÃNH</p>
             <p class="text-xs text-blue-200 mt-1 italic">(Đã làm tròn và trừ các khoản thuế/phí)</p>
@@ -309,6 +338,11 @@
         </div>
         
       </div>
+
+      <template #footer>
+        <el-button @click="dialogPayslipVisible = false">Đóng</el-button>
+        <el-button type="primary" :icon="Printer" @click="printMonthlyPayslip" class="font-bold">IN PHIẾU LƯƠNG NÀY</el-button>
+      </template>
     </el-dialog>
 
   </div>
@@ -316,7 +350,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
-import { User, Medal, Calendar, Key, Money, DocumentAdd, CircleCheck, Warning, Remove } from '@element-plus/icons-vue';
+import { User, Medal, Calendar, Key, Money, DocumentAdd, CircleCheck, Warning, Remove, Printer, Plus, Minus } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import api from '../../services/api';
 
@@ -503,6 +537,43 @@ const fetchPayslips = async () => {
 };
 const openPayslipDetail = (slip) => { selectedPayslip.value = slip; dialogPayslipVisible.value = true; };
 
+const selectedPayslipYear = ref(new Date().getFullYear().toString());
+
+const filteredPayslips = computed(() => {
+  if (!selectedPayslipYear.value) return myPayslips.value;
+  return myPayslips.value.filter(slip => slip.nam.toString() === selectedPayslipYear.value.toString());
+});
+
+// Cập nhật lại 2 hàm In để truyền đúng dữ liệu cần thiết cho trang in
+const printMonthlyPayslip = () => {
+  // Gói dữ liệu người dùng và phiếu lương hiện tại lại
+  const printData = {
+    type: 'month',
+    user: currentUser.value,
+    data: selectedPayslip.value
+  };
+  localStorage.setItem('print_payslip_data', JSON.stringify(printData));
+  
+  // Mở tab mới
+  window.open('/print-payslip', '_blank');
+};
+
+const printYearlySummary = () => {
+  if (!selectedPayslipYear.value) {
+    ElMessage.warning('Vui lòng chọn năm cần in!');
+    return;
+  }
+  
+  const printData = {
+    type: 'year',
+    year: selectedPayslipYear.value,
+    user: currentUser.value,
+    data: filteredPayslips.value
+  };
+  localStorage.setItem('print_payslip_data', JSON.stringify(printData));
+  
+  window.open('/print-payslip', '_blank');
+};
 
 // ==========================================
 // 5. TAB GỬI ĐƠN TỪ

@@ -30,24 +30,25 @@ export const useAuthStore = defineStore('auth', {
     // 1. GỌI API ĐĂNG NHẬP
     async login(username, password, rememberMe) {
       try {
-        // VÌ FILE api.js CỦA BẠN ĐÃ RETURN response.data, NÊN Ở ĐÂY CHỈ CẦN LẤY KẾT QUẢ TRỰC TIẾP
         const data = await api.post('/auth/login', { username, password });
         
-        // Data trả về từ Backend (success, message, token, user)
         const { token, user } = data;
 
-        // Lưu vào State
         this.token = token;
         this.user = user;
 
-        // Lưu vào Trình duyệt (Tùy theo việc có tick Remember Me hay không)
         const storage = rememberMe ? localStorage : sessionStorage;
-        storage.setItem('accessToken', token); // Dùng đúng chữ accessToken
-        storage.setItem('userInfo', JSON.stringify(user)); // Dùng đúng chữ userInfo
+        storage.setItem('accessToken', token); 
+        storage.setItem('userInfo', JSON.stringify(user)); 
 
         return data; 
       } catch (error) {
-        throw error; 
+        // 👉 ĐÃ SỬA: Bóc lớp vỏ của Axios ngay tại đây
+        // Lấy đúng câu "Tài khoản hoặc mật khẩu không đúng!" từ Backend
+        const backendMessage = error.response?.data?.message || 'Sai tài khoản hoặc mật khẩu!';
+        
+        // Ném ra một Error thuần của Javascript để Component dễ dàng bắt được
+        throw new Error(backendMessage); 
       }
     },
 
