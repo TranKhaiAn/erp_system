@@ -367,7 +367,6 @@ const InventoryModel = {
         const [result] = await db.query(sql, [trangThai, maMay]);
         return result.affectedRows;
     },
-<<<<<<< HEAD
 
     //================================
     // BÁO CÁO THỐNG KÊ
@@ -421,8 +420,6 @@ const InventoryModel = {
         return rows;
     },
     
-=======
->>>>>>> c095d035aed92d121b728fa823f98aa2a605e840
 };
 
 module.exports = InventoryModel;
