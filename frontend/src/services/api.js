@@ -12,8 +12,8 @@ const api = axios.create({
 // INTERCEPTOR REQUEST: Can thiệp trước khi gửi API đi
 api.interceptors.request.use(
     (config) => {
-        // Lấy token từ LocalStorage (Lát nữa đăng nhập xong mình sẽ lưu vào đây)
-        const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
+        // Tìm token ở cả 2 túi (localStorage và sessionStorage)
+        const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
         
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
@@ -28,16 +28,22 @@ api.interceptors.request.use(
 // INTERCEPTOR RESPONSE: Can thiệp khi Server trả dữ liệu về
 api.interceptors.response.use(
     (response) => {
-        // Nếu gọi thành công, chỉ lấy đúng cục data, bỏ qua các thông tin rườm rà của HTTP
         return response.data;
     },
     (error) => {
-        // Xử lý lỗi chung (VD: Nếu server báo 401 Unauthorized -> Token hết hạn -> Xóa token, bắt đăng nhập lại)
         if (error.response && error.response.status === 401) {
+            if (error.config.url.includes('/auth/login')) {
+                return Promise.reject(error);
+            }
+
             console.error("Phiên đăng nhập hết hạn!");
+            
+            // 👉 ĐÃ SỬA: Dọn sạch cả 2 túi để thằng Vue Router không bị nhầm lẫn nữa
             localStorage.removeItem('accessToken');
             localStorage.removeItem('userInfo');
-            // Cú pháp chuyển trang về Login (Sẽ hoạt động khi ráp với Vue Router)
+            sessionStorage.removeItem('accessToken');
+            sessionStorage.removeItem('userInfo');
+            
             window.location.href = '/login'; 
         }
         return Promise.reject(error);

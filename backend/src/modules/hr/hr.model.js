@@ -545,7 +545,7 @@ const HrModel = {
             FROM bangluong bl
             JOIN nhanvien nv ON bl.maNhanVien = nv.maNhanVien
             LEFT JOIN chucvu cv ON nv.maChucVu = cv.maChucVu
-            WHERE bl.maNhanVien = ? and bl.trangThai = 1
+            WHERE bl.maNhanVien = ? -- and bl.trangThai = 1
         `;
         let values = [maNhanVien];
         

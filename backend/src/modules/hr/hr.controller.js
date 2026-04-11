@@ -281,8 +281,8 @@ const HrController = {
             // const ngayHienTai = `${year}-${month}-${day}`; // Ra chuẩn YYYY-MM-DD theo giờ VN
             // const gioHienTai = now.toTimeString().split(' ')[0]; // HH:MM:SS
             // Quy định giờ làm việc chuẩn
-            const ngayHienTai = '2026-03-30'; // Ngày test
-            const gioHienTai = '17:45:00';
+            const ngayHienTai = '2026-04-06'; // Ngày test
+            const gioHienTai = '18:15:00';
             
             const cauHinh = await HrModel.getCauHinh();
             const GIO_VAO_CHUAN = cauHinh.gioVaoLamChuan || '08:00:00'; 
