@@ -147,9 +147,10 @@ router.beforeEach((to, from) => {
 
     // 1. Chưa đăng nhập -> Đuổi về trang Login
     if (to.matched.some(record => record.meta.requiresAuth) && !isAuthenticated) {
+        if(to.path !== '/login') {
         return { name: 'Login' }; 
     }
-
+    }
     // 2. Đã đăng nhập mà cố vào trang Login -> Đẩy về đúng trang mặc định
     if (to.path === '/login' && isAuthenticated) {
         return userRole === 1 ? { path: '/' } : { path: '/hr/checkin' };
@@ -174,39 +175,39 @@ router.beforeEach((to, from) => {
     // Cho phép đi tiếp
     return true;
 })// BẢO VỆ ROUTE (Navigation Guard)
-router.beforeEach((to, from) => {
-    const authStore = useAuthStore();
-    const isAuthenticated = authStore.isAuthenticated;
-    const userRole = authStore.getUserRole; // Lấy Role (1: Giám đốc)
+// router.beforeEach((to, from) => {
+//     const authStore = useAuthStore();
+//     const isAuthenticated = authStore.isAuthenticated;
+//     const userRole = authStore.getUserRole; // Lấy Role (1: Giám đốc)
 
-    // 1. Chưa đăng nhập -> Đuổi về trang Login
-    if (to.matched.some(record => record.meta.requiresAuth) && !isAuthenticated) {
-        return { name: 'Login' }; 
-    }
+//     // 1. Chưa đăng nhập -> Đuổi về trang Login
+//     if (to.matched.some(record => record.meta.requiresAuth) && !isAuthenticated) {
+//         return { name: 'Login' }; 
+//     }
 
-    // 2. Đã đăng nhập mà cố vào trang Login -> Đẩy về đúng trang mặc định
-    if (to.path === '/login' && isAuthenticated) {
-        return userRole === 1 ? { path: '/' } : { path: '/hr/checkin' };
-    }
+//     // 2. Đã đăng nhập mà cố vào trang Login -> Đẩy về đúng trang mặc định
+//     if (to.path === '/login' && isAuthenticated) {
+//         return userRole === 1 ? { path: '/' } : { path: '/hr/checkin' };
+//     }
 
-    // 👉 3. CHỐT CHẶN DASHBOARD: Chỉ Giám đốc mới được xem
-    if (to.path === '/' && isAuthenticated) {
-        if (userRole !== 1) {
-            return { path: '/hr/checkin' }; // Nhân viên khác bị đá sang Chấm công
-        }
-    }
+//     // 👉 3. CHỐT CHẶN DASHBOARD: Chỉ Giám đốc mới được xem
+//     if (to.path === '/' && isAuthenticated) {
+//         if (userRole !== 1) {
+//             return { path: '/hr/checkin' }; // Nhân viên khác bị đá sang Chấm công
+//         }
+//     }
 
-    // 4. Chốt chặn Phân quyền nghiệp vụ (RBAC Guard)
-    if (to.meta.permission) {
-        if (!authStore.hasPermission(to.meta.permission, 'quyenXem')) {
-            ElMessage.error('Truy cập bị từ chối! Bạn không có quyền xem trang này.');
-            // Nếu bị từ chối, cũng phải trả về đúng trang mặc định theo Role
-            return userRole === 1 ? { path: '/' } : { path: '/hr/checkin' };
-        }
-    }
+//     // 4. Chốt chặn Phân quyền nghiệp vụ (RBAC Guard)
+//     if (to.meta.permission) {
+//         if (!authStore.hasPermission(to.meta.permission, 'quyenXem')) {
+//             ElMessage.error('Truy cập bị từ chối! Bạn không có quyền xem trang này.');
+//             // Nếu bị từ chối, cũng phải trả về đúng trang mặc định theo Role
+//             return userRole === 1 ? { path: '/' } : { path: '/hr/checkin' };
+//         }
+//     }
 
-    // Cho phép đi tiếp
-    return true;
-})
+//     // Cho phép đi tiếp
+//     return true;
+// })
 
 export default router;
