@@ -23,18 +23,20 @@
         </h2>
         
         <table class="w-full text-sm border border-black mb-6">
-          <tr>
-            <td class="border-b border-r border-black p-2 font-bold w-32 bg-gray-100">Họ và tên:</td>
-            <td class="border-b border-black p-2 font-bold uppercase">{{ printData.user.hoTen }}</td>
-            <td class="border-b border-l border-r border-black p-2 font-bold w-32 bg-gray-100">Mã NV:</td>
-            <td class="border-b border-black p-2">{{ printData.user.maNhanVien }}</td>
-          </tr>
-          <tr>
-            <td class="border-r border-black p-2 font-bold bg-gray-100">Chức vụ:</td>
-            <td class="p-2">{{ printData.user.tenChucVu }}</td>
-            <td class="border-l border-r border-black p-2 font-bold bg-gray-100">Lương cơ sở:</td>
-            <td class="p-2">{{ formatPrice(printData.data.luongTheoGio) }}/h</td>
-          </tr>
+          <tbody>
+            <tr>
+              <td class="border-b border-r border-black p-2 font-bold w-32 bg-gray-100">Họ và tên:</td>
+              <td class="border-b border-black p-2 font-bold uppercase">{{ printData.user.hoTen }}</td>
+              <td class="border-b border-l border-r border-black p-2 font-bold w-32 bg-gray-100">Mã NV:</td>
+              <td class="border-b border-black p-2">{{ printData.user.maNhanVien }}</td>
+            </tr>
+            <tr>
+              <td class="border-r border-black p-2 font-bold bg-gray-100">Chức vụ:</td>
+              <td class="p-2">{{ printData.user.tenChucVu }}</td>
+              <td class="border-l border-r border-black p-2 font-bold bg-gray-100">Lương cơ sở:</td>
+              <td class="p-2">{{ formatPrice(printData.data.luongTheoGio) }}/h</td>
+            </tr>
+          </tbody>
         </table>
 
         <table class="w-full text-sm border-collapse border border-black">
