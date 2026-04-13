@@ -273,23 +273,27 @@ const HrController = {
     ghiNhanChamCong: async (req, res) => {
         try {
             const maNhanVien = req.user.maNhanVien;
+            
             // Lấy ngày và giờ thực tế từ Server
-            // const now = new Date();
-            // const year = now.getFullYear();
-            // const month = String(now.getMonth() + 1).padStart(2, '0');
-            // const day = String(now.getDate()).padStart(2, '0');
-            // const ngayHienTai = `${year}-${month}-${day}`; // Ra chuẩn YYYY-MM-DD theo giờ VN
-            // const gioHienTai = now.toTimeString().split(' ')[0]; // HH:MM:SS
-            // Quy định giờ làm việc chuẩn
-            const ngayHienTai = '2026-04-06'; // Ngày test
-            const gioHienTai = '18:15:00';
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const ngayHienTai = `${year}-${month}-${day}`; 
+            const gioHienTai = now.toTimeString().split(' ')[0]; // HH:MM:SS
+            
+            // BỎ HARDCODE TRONG SẢN PHẨM THỰC TẾ
+            // const ngayHienTai = '2026-04-06'; 
+            // const gioHienTai = '18:15:00';
             
             const cauHinh = await HrModel.getCauHinh();
             const GIO_VAO_CHUAN = cauHinh.gioVaoLamChuan || '08:00:00'; 
             const GIO_RA_CHUAN = cauHinh.gioRaLamChuan || '17:00:00';
+            const TG_CHO_OT_PHUT = Number(cauHinh.tgChoTangCa) || 60;   // Buffer time (VD: 60 phút)
+            const MAX_OT_GIO = Number(cauHinh.soGioTangCaToiDa) || 2;   // OT Max (VD: 2 giờ)
 
             const chamCongHomNay = await HrModel.getChamCongNgayHienTai(maNhanVien, ngayHienTai);
-            // chưa chấm công -> thực hiện check-in
+            
             if (gioHienTai < '06:00:00') {
                 return res.status(400).json({ success: false, message: 'Chưa đến giờ mở ca. Vui lòng quay lại sau 6h00 sáng!' });
             }
@@ -303,7 +307,6 @@ const HrController = {
                     trangThai: trangThaiChot
                 });
             } else {
-                // =============== XỬ LÝ CHECK-OUT ===============
                 if (chamCongHomNay.gioRa) {
                     return res.status(400).json({ success: false, message: 'Bạn đã hoàn tất chấm công ra về cho ngày hôm nay rồi!' });
                 }
@@ -311,41 +314,50 @@ const HrController = {
                 let trangThaiChot = chamCongHomNay.trangThai || '';
                 let soGioLam = 0;
 
-                // Quy đổi ra Timestamp để tính toán chính xác
                 const tgVao = new Date(`1970-01-01T${chamCongHomNay.gioVao}Z`);
                 const tgRa = new Date(`1970-01-01T${gioHienTai}Z`);
                 const tgRaChuan = new Date(`1970-01-01T${GIO_RA_CHUAN}Z`);
-                const tgBatDauTC = new Date(tgRaChuan.getTime() + (60 * 60 * 1000));
+                
+                // TÍNH TOÁN CÁC MỐC TĂNG CA DỰA VÀO CẤU HÌNH
+                const tgBatDauOT = new Date(tgRaChuan.getTime() + (TG_CHO_OT_PHUT * 60 * 1000));
+                const tgMaxOT = new Date(tgBatDauOT.getTime() + (MAX_OT_GIO * 60 * 60 * 1000));
 
-                // PHÂN LOẠI 3 VÙNG THỜI GIAN CHECK-OUT
                 if (tgRa < tgRaChuan) {
                     // VÙNG 1: Về sớm (Trước 17h)
                     trangThaiChot = trangThaiChot ? (trangThaiChot + ' - Về sớm') : 'Về sớm';
                     soGioLam = ((tgRa - tgVao) / 3600000) - 1; // Trừ 1 tiếng nghỉ trưa
                 } 
-                else if (tgRa >= tgRaChuan && tgRa <= tgBatDauTC) {
-                    // VÙNG 2: La cà (Từ 17h đến 18h) -> Chốt cứng giờ về là 17h
+                else if (tgRa >= tgRaChuan && tgRa <= tgBatDauOT) {
+                    // VÙNG 2: Trong thời gian chờ (17h - 18h) -> Chốt 8h
                     trangThaiChot = trangThaiChot ? (trangThaiChot + ' - Về đúng giờ') : 'Về đúng giờ';
                     soGioLam = ((tgRaChuan - tgVao) / 3600000) - 1; 
                 } 
-                else if (tgRa > tgBatDauTC) {
-                    // VÙNG 3: Tăng ca (Sau 18h) -> Tính 8 tiếng hành chính + Số giờ sau 18h
+                else if (tgRa > tgBatDauOT) {
+                    // VÙNG 3: Tăng ca (Sau 18h)
                     trangThaiChot = trangThaiChot ? (trangThaiChot + ' và Tăng ca') : 'Tăng ca';
                     const gioHanhChinh = ((tgRaChuan - tgVao) / 3600000) - 1;
-                    const gioTangCa = (tgRa - tgBatDauTC) / 3600000; // Chỉ tính từ 18h trở đi
+                    
+                    let gioTangCa = 0;
+                    if (tgRa <= tgMaxOT) {
+                        // Nằm trong mức OT cho phép (18h - 20h)
+                        gioTangCa = (tgRa - tgBatDauOT) / 3600000;
+                    } else {
+                        // Vượt mức OT tối đa (> 20h) -> Chốt cứng số giờ OT tối đa
+                        gioTangCa = MAX_OT_GIO;
+                        trangThaiChot += ' (Đã đạt mốc OT tối đa)';
+                    }
+                    
                     soGioLam = gioHanhChinh + gioTangCa;
                 }
 
-                // Chống số âm nếu nhân viên đến làm rồi về luôn trong buổi sáng
                 if (soGioLam < 0) soGioLam = 0;
-                soGioLam = parseFloat(soGioLam.toFixed(2)); // Làm tròn 2 chữ số (VD: 8.50)
+                soGioLam = parseFloat(soGioLam.toFixed(2));
 
-                // Lưu vào Database
                 await HrModel.checkOut(maNhanVien, ngayHienTai, gioHienTai, soGioLam, trangThaiChot);
 
                 return res.status(200).json({
                     success: true,
-                    message: `Check-out thành công lúc ${gioHienTai}. Trạng thái ngày: ${trangThaiChot}`
+                    message: `Check-out thành công lúc ${gioHienTai}. Trạng thái: ${trangThaiChot}`
                 });
             }
 
@@ -386,7 +398,6 @@ const HrController = {
         try {
             let { maNhanVien, ngayLamViec, gioVao, gioRa, trangThai } = req.body;
 
-            // Xử lý nếu Frontend gửi thiếu giây (VD: '08:00' thành '08:00:00')
             if (gioVao && gioVao.length === 5) gioVao += ':00';
             if (gioRa && gioRa.length === 5) gioRa += ':00';
             
@@ -394,71 +405,67 @@ const HrController = {
             if (!gioRa) gioRa = null;
 
             let soGioLam = 0;
-            let trangThaiMoi = trangThai; // Lấy tạm trạng thái từ Frontend
+            let trangThaiMoi = trangThai; 
 
-            // 1. NHÓM TRẠNG THÁI ĐẶC BIỆT (Nghỉ phép, vắng mặt)
             if (trangThaiMoi === 'Nghỉ phép' || trangThaiMoi === 'Nghỉ ốm') {
-                soGioLam = 8.00; // Nghỉ có đơn vẫn được tính 8 tiếng
+                soGioLam = 8.00; 
             } 
             else if (trangThaiMoi === 'Vắng mặt') {
                 soGioLam = 0;
-                gioVao = null; // Xóa luôn giờ nếu có
+                gioVao = null; 
                 gioRa = null;
             } 
-            // 2. NHÓM ĐI LÀM THỰC TẾ (Hệ thống tự động tính toán lại 100% dựa trên giờ)
             else if (gioVao && gioRa) {
                 const cauHinh = await HrModel.getCauHinh();
                 const GIO_VAO_CHUAN = cauHinh.gioVaoLamChuan || '08:00:00';
                 const GIO_RA_CHUAN = cauHinh.gioRaLamChuan || '17:00:00';
+                const TG_CHO_OT_PHUT = Number(cauHinh.tgChoTangCa) || 60;
+                const MAX_OT_GIO = Number(cauHinh.soGioTangCaToiDa) || 2;
 
                 const tgVao = new Date(`1970-01-01T${gioVao}Z`);
                 const tgRa = new Date(`1970-01-01T${gioRa}Z`);
                 
-                // Các mốc giờ chuẩn của công ty
                 const tgVaoChuan = new Date(`1970-01-01T${GIO_VAO_CHUAN}Z`); 
                 const tgRaChuan = new Date(`1970-01-01T${GIO_RA_CHUAN}Z`);  
-                const tgBatDauTC = new Date(tgRaChuan.getTime() + (60 * 60 * 1000)); // +1 tiếng nghỉ
+                const tgBatDauOT = new Date(tgRaChuan.getTime() + (TG_CHO_OT_PHUT * 60 * 1000));
+                const tgMaxOT = new Date(tgBatDauOT.getTime() + (MAX_OT_GIO * 60 * 60 * 1000));
 
-                // 👉 FIX LỖI ẢO GIỜ: Nếu đi sớm trước 8h, chỉ bắt đầu tính lương từ 8h
                 const calcTgVao = (tgVao < tgVaoChuan) ? tgVaoChuan : tgVao;
-
-                // XÉT ĐẦU VÀO: Trễ hay Đúng giờ?
                 let prefix = (tgVao > tgVaoChuan) ? 'Đi trễ' : 'Đúng giờ';
 
-                // XÉT ĐẦU RA VÀ TÍNH TIỀN (3 Vùng thời gian)
                 if (tgRa < tgRaChuan) {
-                    // Vùng 1: Về sớm
                     trangThaiMoi = `${prefix} - Về sớm`;
                     soGioLam = ((tgRa - calcTgVao) / 3600000) - 1; 
                 } 
-                else if (tgRa >= tgRaChuan && tgRa <= tgBatDauTC) {
-                    // Vùng 2: La cà / Về chuẩn (Chốt cứng giờ về là 17:00)
+                else if (tgRa >= tgRaChuan && tgRa <= tgBatDauOT) {
                     trangThaiMoi = `${prefix} - Về đúng giờ`;
                     soGioLam = ((tgRaChuan - calcTgVao) / 3600000) - 1; 
                 } 
-                else if (tgRa > tgBatDauTC) {
-                    // Vùng 3: Tăng ca (Giờ hành chính + Giờ OT)
+                else if (tgRa > tgBatDauOT) {
                     trangThaiMoi = `${prefix} và Tăng ca`;
                     const gioHanhChinh = ((tgRaChuan - calcTgVao) / 3600000) - 1;
-                    const gioTangCa = (tgRa - tgBatDauTC) / 3600000;
+                    
+                    let gioTangCa = 0;
+                    if (tgRa <= tgMaxOT) {
+                        gioTangCa = (tgRa - tgBatDauOT) / 3600000;
+                    } else {
+                        gioTangCa = MAX_OT_GIO;
+                        trangThaiMoi += ' (Max OT)';
+                    }
                     soGioLam = gioHanhChinh + gioTangCa;
                 }
 
-                // Chống số âm (Nếu vô tình sửa giờ ra < giờ vào)
                 if (soGioLam < 0) soGioLam = 0;
                 soGioLam = parseFloat(soGioLam.toFixed(2));
             }
-            // 3. NẾU CHỈ CÓ GIỜ VÀO (Đang đi làm, chưa về)
             else if (gioVao && !gioRa) {
                 const tgVao = new Date(`1970-01-01T${gioVao}Z`);
                 const tgVaoChuan = new Date(`1970-01-01T08:00:00Z`);
                 trangThaiMoi = (tgVao > tgVaoChuan) ? 'Đi trễ' : 'Đúng giờ';
-                soGioLam = 0; // Chưa về chưa tính giờ
+                soGioLam = 0; 
             }
 
-            // Gọi Model cập nhật xuống DB (Ghi đè luôn cái trạng thái mới)
             await HrModel.adminUpdateChamCong(maNhanVien, ngayLamViec, gioVao, gioRa, soGioLam, trangThaiMoi);
-
             return res.status(200).json({ success: true, message: 'Cập nhật chấm công thành công!' });
         } catch (error) {
             console.error("Lỗi update chấm công:", error);
@@ -644,15 +651,7 @@ const HrController = {
     getBangLuong: async (req, res) => {
         try{
             const {thang, nam, maNhanVien, maChucVu} = req.query;
-            
-            // 🔴 CAMERA 2: Xem Frontend có truyền đúng tháng, năm xuống không?
-            console.log("Backend đang tìm lương cho:", {thang, nam}); 
-
             const result = await HrModel.getBangLuong({thang, nam, maNhanVien, maChucVu});
-            
-            // 🔴 CAMERA 3: Xem SQL có lấy lên được dòng nào không?
-            console.log("Số dòng lấy được từ Database:", result.length);
-
             res.status(200).json({success: true, data: result});
         } catch (error) {
             console.error("Lỗi Controller getBangLuong:", error);

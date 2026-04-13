@@ -310,6 +310,8 @@ const HrModel = {
             return rows[0] || {
                 gioVaoLamChuan: '08:00:00', 
                 gioRaLamChuan: '17:00:00',  
+                tgChoTangCa: 60,     // phút     
+                soGioTangCaToiDa: 2,   
                 tienPhatDiTre: 2000,
                 heSoTangCa: 1.5,
                 phanTramBHXH: 8.0,
@@ -320,16 +322,17 @@ const HrModel = {
             };
         } catch (error) {
             console.error("Lỗi lấy cấu hình:", error);
-            return {}; // Trả về object rỗng để hệ thống dùng số mặc định
+            return {}; 
         }
     },
-
 
     updateCauHinh: async (data) => {
         const sql = `
             UPDATE cauhinh 
             SET gioVaoLamChuan = ?, 
                 gioRaLamChuan = ?, 
+                tgChoTangCa = ?,      
+                soGioTangCaToiDa = ?,
                 tienPhatDiTre = ?, 
                 heSoTangCa = ?, 
                 luongCoSoBH = ?, 
@@ -341,7 +344,9 @@ const HrModel = {
         `;
         const values = [
             data.gioVaoLamChuan, 
-            data.gioRaLamChuan, // 👉 ĐÃ THÊM
+            data.gioRaLamChuan, 
+            data.tgChoTangCa || 60,      
+            data.soGioTangCaToiDa || 2,  
             data.tienPhatDiTre, 
             data.heSoTangCa, 
             data.luongCoSoBH, 

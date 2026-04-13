@@ -1,4 +1,26 @@
 const InventoryModel = require('./inventory.model');
+const cloudinary = require('cloudinary').v2;
+
+// 1. Cấu hình Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+// 2. Hàm hỗ trợ đẩy ảnh từ RAM (Buffer) lên Cloudinary
+const uploadToCloudinary = (fileBuffer) => {
+    return new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+            { folder: 'laptop_erp_products' }, // Tên thư mục trên Cloud
+            (error, result) => {
+                if (error) return reject(error);
+                resolve(result);
+            }
+        );
+        stream.end(fileBuffer);
+    });
+};
 
 const InventoryController = {
     // =====================================
@@ -121,24 +143,45 @@ const InventoryController = {
         }
     },
 
+    // Thêm mới sản phẩm
     createProduct: async (req, res) => {
         try {
-            const newId = await InventoryModel.createProduct(req.body);
+            const data = req.body;
+
+            // NẾU CÓ ẢNH THÌ ĐẨY LÊN CLOUD VÀ LẤY LINK VỀ
+            if (req.file) {
+                const cloudResult = await uploadToCloudinary(req.file.buffer);
+                data.hinhAnh = cloudResult.secure_url; // Đây chính là link https://...
+            }
+
+            const newId = await InventoryModel.createProduct(data);
             res.status(201).json({ success: true, message: 'Thêm sản phẩm thành công', id: newId });
         } catch (error) {
             console.error(error);
-            res.status(500).json({ success: false, message: 'Lỗi khi thêm sản phẩm' });
+            res.status(500).json({ success: false, message: 'Lỗi máy chủ khi tạo sản phẩm' });
         }
     },
 
+    // Cập nhật sản phẩm
     updateProduct: async (req, res) => {
         try {
             const { id } = req.params;
-            const affectedRows = await InventoryModel.updateProduct(id, req.body);
-            if (affectedRows === 0) return res.status(404).json({ success: false, message: 'Sản phẩm không tồn tại' });
-            res.status(200).json({ success: true, message: 'Cập nhật thành công' });
+            const data = req.body;
+            
+            // NẾU SỬA ẢNH THÌ ĐẨY LÊN CLOUD VÀ LẤY LINK MỚI VỀ
+            if (req.file) {
+                const cloudResult = await uploadToCloudinary(req.file.buffer);
+                data.hinhAnh = cloudResult.secure_url; 
+            }
+
+            const affectedRows = await InventoryModel.updateProduct(id, data);
+            if (affectedRows === 0) {
+                return res.status(404).json({ success: false, message: 'Sản phẩm không tồn tại' });
+            }
+            res.status(200).json({ success: true, message: 'Đã cập nhật sản phẩm' });
         } catch (error) {
-            res.status(500).json({ success: false, message: 'Lỗi khi cập nhật' });
+            console.error(error);
+            res.status(500).json({ success: false, message: 'Lỗi máy chủ khi cập nhật sản phẩm' });
         }
     },
 

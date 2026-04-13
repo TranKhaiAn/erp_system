@@ -38,7 +38,7 @@ api.interceptors.response.use(
 
             console.error("Phiên đăng nhập hết hạn!");
             
-            // 👉 ĐÃ SỬA: Dọn sạch cả 2 túi để thằng Vue Router không bị nhầm lẫn nữa
+            // ĐÃ SỬA: Dọn sạch cả 2 túi để thằng Vue Router không bị nhầm lẫn nữa
             localStorage.removeItem('accessToken');
             localStorage.removeItem('userInfo');
             sessionStorage.removeItem('accessToken');

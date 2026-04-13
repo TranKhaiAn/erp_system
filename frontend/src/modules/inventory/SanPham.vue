@@ -26,7 +26,7 @@
 
         <el-table-column label="Hình ảnh" width="90" align="center">
           <template #default="scope">
-            <el-avatar shape="square" :size="50" :src="scope.row.hinhAnh" class="bg-slate-100 border border-slate-200">
+            <el-avatar shape="square" :size="50" :src="getImageUrl(scope.row.hinhAnh)" class="bg-slate-100 border border-slate-200">
               <el-icon :size="20" class="text-slate-300"><Monitor /></el-icon>
             </el-avatar>
           </template>
@@ -108,7 +108,7 @@
               :on-change="handleFileChange"
               accept="image/jpeg,image/png,image/webp"
             >
-              <img v-if="formData.hinhAnh" :src="formData.hinhAnh" class="avatar-preview" />
+              <img v-if="formData.hinhAnh" :src="getImageUrl(formData.hinhAnh)" class="avatar-preview" />
               <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
             </el-upload>
             <p class="text-xs text-slate-400 mt-3 text-center leading-relaxed">Chấp nhận JPG/PNG/WEBP. Tối đa 2MB.</p>
@@ -178,7 +178,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { Search, Plus, Edit, Monitor } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
-import api from '../../services/api'; // Import xe chở hàng Axios
+import api from '../../services/api'; 
 
 // --- STATE: DỮ LIỆU TỪ API ---
 const dbHangSP = ref([]);
@@ -199,6 +199,7 @@ const initialForm = {
   hinhAnh: '', soLuongTon: 0, giaNhap: 0, giaBan: 0, trangThai: 1
 };
 const formData = ref({ ...initialForm });
+const selectedFile = ref(null); // Biến chứa file ảnh thật để gửi lên Server
 
 const rules = {
   maHang: [{ required: true, message: 'Vui lòng chọn Hãng', trigger: 'change' }],
@@ -206,13 +207,9 @@ const rules = {
   giaBan: [{ required: true, message: 'Vui lòng nhập Giá Bán', trigger: 'blur' }],
 };
 
-// ==========================================
-// 1. TẢI DỮ LIỆU TỪ BACKEND
-// ==========================================
 const loadData = async () => {
   loading.value = true;
   try {
-    // Kéo thêm API maytinh để lấy số lượng thực tế
     const [resHang, resSP, resMayTinh] = await Promise.all([
       api.get('/inventory/hangsp'),
       api.get('/inventory/sanpham?limit=1000'),
@@ -224,46 +221,31 @@ const loadData = async () => {
     
     const rawProducts = resSP.data || [];
 
-    // GHI ĐÈ SỐ LƯỢNG TỒN: Bỏ qua DB, tự đếm số máy tính có trạng thái 'Trong kho'
     dbSanPham.value = rawProducts.map(sp => {
       const realCount = dbMayTinh.value.filter(mt => 
-        Number(mt.maSP) === Number(sp.maSP) && 
-        mt.trangThai && 
-        mt.trangThai.toString().trim() === 'Trong kho'
+        Number(mt.maSP) === Number(sp.maSP) && mt.trangThai === 'Trong kho'
       ).length;
 
-      return {
-        ...sp,
-        soLuongTon: realCount // Ép số lượng tồn hiển thị bằng đúng số đếm thực tế
-      };
+      return { ...sp, soLuongTon: realCount };
     });
 
   } catch (error) {
-    ElMessage.error('Không thể tải dữ liệu từ máy chủ!');
-    console.error("Lỗi tải dữ liệu:", error);
+    ElMessage.error('Không thể tải dữ liệu!');
   } finally {
     loading.value = false;
   }
 };
 
-// Chạy hàm loadData ngay khi mở trang
-onMounted(() => {
-  loadData();
-});
+onMounted(() => { loadData(); });
 
-// ==========================================
-// 2. TÍNH TOÁN & TÌM KIẾM
-// ==========================================
 const filteredProducts = computed(() => {
   return dbSanPham.value.filter(sp => {
-    // Đảm bảo maSP không bị null/undefined khi gõ tìm kiếm
     const maSanPham = sp.maSP ? sp.maSP.toString() : '';
     const tenSanPham = sp.tenSP ? sp.tenSP.toLowerCase() : '';
     const keyword = searchQuery.value.toLowerCase();
 
     const matchQuery = tenSanPham.includes(keyword) || maSanPham.includes(keyword); 
     const matchHang = filterHang.value ? sp.maHang === filterHang.value : true;
-    
     return matchQuery && matchHang;
   });
 });
@@ -276,19 +258,18 @@ const getTenHang = (maHang) => {
 };
 
 // ==========================================
-// 3. XỬ LÝ ẢNH BASE64 (Dành cho việc lưu db tạm)
+// 3. XỬ LÝ LỰA CHỌN FILE ẢNH
 // ==========================================
 const handleFileChange = (uploadFile) => {
   if (uploadFile.size / 1024 / 1024 > 2) {
     ElMessage.error('Dung lượng ảnh không được vượt quá 2MB!');
     return false;
   }
-  const reader = new FileReader();
-  reader.readAsDataURL(uploadFile.raw);
-  reader.onload = () => {
-    formData.value.hinhAnh = reader.result;
-    ElMessage.success('Tải ảnh lên thành công!');
-  };
+  
+  selectedFile.value = uploadFile.raw; // Lưu file gốc để tí nữa gửi API
+
+  // Tạo URL tạm thời để hiển thị Preview trên màn hình ngay lập tức
+  formData.value.hinhAnh = URL.createObjectURL(uploadFile.raw);
 };
 
 // ==========================================
@@ -297,6 +278,7 @@ const handleFileChange = (uploadFile) => {
 const openAddModal = () => {
   isEditMode.value = false;
   formData.value = { ...initialForm };
+  selectedFile.value = null; // Xóa file cũ
   if (formRef.value) formRef.value.clearValidate();
   dialogVisible.value = true;
 };
@@ -304,31 +286,68 @@ const openAddModal = () => {
 const openEditModal = (row) => {
   isEditMode.value = true;
   formData.value = { ...row };
+  selectedFile.value = null; // Reset file
   if (formRef.value) formRef.value.clearValidate();
   dialogVisible.value = true;
 };
 
 // ==========================================
-// 5. GỌI API THÊM / SỬA / CẬP NHẬT TRẠNG THÁI
+// 5. LƯU SẢN PHẨM (DÙNG FORMDATA ĐỂ CHỨA FILE)
 // ==========================================
+
+// Lấy link API từ cấu hình
+const BASE_API_URL = api.defaults.baseURL.replace('/api/v1', '');
+
+// Ảnh mặc định khi sản phẩm chưa có hình hoặc link bị hỏng
+const DEFAULT_IMAGE = 'https://play-lh.googleusercontent.com/Od_uEStv5JnUgzNuWd1ljzyavnP_eaET5XDOtDpfUXG5qHp7xoFsa5B0l0sBnSQfZnc=w480-h960-rw';
+
+const getImageUrl = (path) => {
+  // 1. Nếu path rỗng, null hoặc undefined -> Trả về ảnh mặc định
+  if (!path || path === '' || path === 'null') return DEFAULT_IMAGE; 
+
+  // 2. Nếu là link tuyệt đối (Cloudinary hoặc link mạng) -> Trả về nguyên văn
+  if (path.startsWith('http')) return path; 
+
+  // 3. Nếu là link tương đối (ảnh local cũ /uploads/...) -> Nối với domain Backend
+  const safePath = path.startsWith('/') ? path : `/${path}`;
+  return `${BASE_API_URL}${safePath}`; 
+};
+
 const saveProduct = async () => {
   if (!formRef.value) return;
   await formRef.value.validate(async (valid) => {
     if (valid) {
       saving.value = true;
       try {
+        // Tạo đối tượng FormData để chứa cả text và file
+        const payload = new FormData();
+        payload.append('maHang', formData.value.maHang);
+        payload.append('tenSP', formData.value.tenSP);
+        payload.append('cauHinh', formData.value.cauHinh || '');
+        payload.append('moTa', formData.value.moTa || '');
+        payload.append('giaBan', formData.value.giaBan || 0);
+        payload.append('trangThai', formData.value.trangThai);
+        
+        // Nếu có chọn ảnh mới thì nhét file vào
+        if (selectedFile.value) {
+            payload.append('hinhAnhFile', selectedFile.value);
+        } else {
+            // Nếu không chọn ảnh mới, gửi lại link ảnh cũ (để không bị mất ảnh khi sửa tên)
+            payload.append('hinhAnh', formData.value.hinhAnh || '');
+        }
+
+        // Khai báo Header cho Axios biết đây là upload file
+        const config = { headers: { 'Content-Type': 'multipart/form-data' } };
+
         if (isEditMode.value) {
-          // GỌI API PUT (CẬP NHẬT)
-          await api.put(`/inventory/sanpham/${formData.value.maSP}`, formData.value);
+          await api.put(`/inventory/sanpham/${formData.value.maSP}`, payload, config);
           ElMessage.success('Cập nhật sản phẩm thành công!');
         } else {
-          // GỌI API POST (THÊM MỚI)
-          await api.post('/inventory/sanpham', formData.value);
+          await api.post('/inventory/sanpham', payload, config);
           ElMessage.success('Tạo sản phẩm mới thành công!');
         }
-        dialogVisible.value = false;
         
-        // Cập nhật xong thì tải lại dữ liệu mới nhất từ CSDL
+        dialogVisible.value = false;
         loadData();
       } catch (error) {
         ElMessage.error(error.response?.data?.message || 'Lỗi khi lưu sản phẩm!');
@@ -341,21 +360,18 @@ const saveProduct = async () => {
 
 const toggleStatus = async (row) => {
   const previousStatus = row.trangThai === 1 ? 0 : 1; 
-
   try {
-    // Sửa lại payload cho chuẩn 100% với Database
     const payload = {
       maHang: row.maHang,
       tenSP: row.tenSP,
-      cauHinh: row.cauHinh, // <-- Đã sửa thành row.cauHinh
+      cauHinh: row.cauHinh, 
       moTa: row.moTa,
-      hinhAnh: row.hinhAnh,
+      hinhAnh: row.hinhAnh, // Trạng thái cập nhật nhanh không cần gửi file, chỉ gửi link cũ
       giaBan: row.giaBan || 0,
       trangThai: row.trangThai
     };
 
     await api.put(`/inventory/sanpham/${row.maSP}`, payload);
-    
     const statusText = row.trangThai === 1 ? 'Đang kinh doanh' : 'Ngừng kinh doanh';
     ElMessage.success(`Cập nhật trạng thái thành: ${statusText}`);
     
