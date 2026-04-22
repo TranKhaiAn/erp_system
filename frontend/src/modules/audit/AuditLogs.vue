@@ -22,9 +22,9 @@
 
       <!-- Filters & Stats -->
       <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
-        <el-card shadow="never" class="!border-none !bg-blue-600 text-white !rounded-xl">
+        <el-card shadow="never" class="!border-none !bg-gradient-to-br from-blue-600 to-indigo-700 text-white !rounded-xl shadow-lg shadow-blue-500/20">
           <div class="flex items-center gap-4">
-            <div class="p-2 md:p-3 bg-white/20 rounded-lg text-xl md:text-2xl"><View /></div>
+            <div class="p-2 md:p-3 bg-white/20 rounded-lg text-xl md:text-2xl"><el-icon><Operation /></el-icon></div>
             <div>
               <p class="text-[10px] md:text-xs opacity-80 uppercase font-bold tracking-wider">Tổng hoạt động</p>
               <p class="text-xl md:text-2xl font-black">{{ totalLogs }}</p>
@@ -157,9 +157,20 @@
            </div>
         </div>
         <div>
-           <p class="text-slate-400 font-bold uppercase text-[10px] mb-2">Dữ liệu chi tiết</p>
-           <div class="bg-slate-900 text-emerald-400 p-4 rounded-lg text-[11px] overflow-auto max-h-60 font-mono">
-              <pre class="whitespace-pre-wrap break-all">{{ formatJson(selectedLog.chiTiet) }}</pre>
+           <p class="text-slate-400 font-bold uppercase text-[10px] mb-3">Dữ liệu chi tiết</p>
+           <div class="space-y-2 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
+              <div v-for="(val, key) in parseChiTiet(selectedLog.chiTiet)" :key="key" 
+                   class="flex flex-col p-3 bg-white border border-slate-100 rounded-lg shadow-sm hover:border-blue-200 transition-all">
+                <div class="flex items-center gap-2 mb-1">
+                  <el-icon class="text-blue-400 text-xs"><InfoFilled /></el-icon>
+                  <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{{ getFriendlyKey(key) }}</span>
+                </div>
+                <span class="text-sm font-bold text-slate-800 break-words">{{ formatFriendlyValue(val, key) }}</span>
+              </div>
+              <div v-if="!selectedLog.chiTiet" class="text-center py-12">
+                <el-icon class="text-4xl text-slate-200"><Document /></el-icon>
+                <p class="text-slate-300 italic text-sm mt-2">Không có dữ liệu chi tiết kèm theo</p>
+              </div>
            </div>
         </div>
       </div>
@@ -169,7 +180,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { Timer, Refresh, Download, Search, InfoFilled, View } from '@element-plus/icons-vue';
+import { Timer, Refresh, Download, Search, InfoFilled, Operation } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import api from '../../services/api';
 import dayjs from 'dayjs';
@@ -260,6 +271,89 @@ const formatChiTiet = (str) => {
         const obj = JSON.parse(str);
         return JSON.stringify(obj).substring(0, 100);
     } catch (e) { return str; }
+};
+
+const parseChiTiet = (str) => {
+    if (!str) return {};
+    try {
+        const obj = JSON.parse(str);
+        return typeof obj === 'object' ? obj : { info: obj };
+    } catch (e) {
+        return { thongTin: str };
+    }
+};
+
+const getFriendlyKey = (key) => {
+    const map = {
+        maSP: 'Mã sản phẩm',
+        tenSP: 'Tên sản phẩm',
+        maHang: 'Mã hãng',
+        giaBan: 'Giá bán niêm yết',
+        soLuongTon: 'Số lượng tồn kho',
+        maNCC: 'Mã nhà cung cấp',
+        tenNCC: 'Tên nhà cung cấp',
+        maNV: 'Mã nhân viên',
+        maNhanVien: 'Mã nhân viên',
+        hoTen: 'Họ và tên',
+        maNhomQuyen: 'Mã nhóm quyền',
+        trangThai: 'Trạng thái hoạt động',
+        maMay: 'Mã máy (Số Serial/IMEI)',
+        maPhieuNhap: 'Mã số phiếu nhập',
+        tongTien: 'Tổng giá trị (VND)',
+        donGia: 'Đơn giá đơn vị',
+        donGiaNhap: 'Giá nhập kho',
+        maHoaDon: 'Mã số hóa đơn',
+        tenHang: 'Tên thương hiệu',
+        username: 'Tên tài khoản',
+        sdt: 'Số điện thoại liên hệ',
+        email: 'Địa chỉ Email',
+        diaChi: 'Địa chỉ liên lạc',
+        maChucVu: 'Mã chức vụ',
+        tenChucVu: 'Tên chức vụ',
+        luongCoBan: 'Mức lương cơ bản',
+        ngayApDung: 'Ngày bắt đầu áp dụng',
+        amount: 'Số tiền giao dịch',
+        paymentMethod: 'Phương thức thanh toán',
+        vnp_TransactionNo: 'Mã giao dịch từ VNPay',
+        count: 'Số lượng thực hiện',
+        moTa: 'Mô tả chi tiết',
+        cauHinh: 'Thông số cấu hình',
+        hinhAnh: 'Đường dẫn hình ảnh',
+        ghiChu: 'Ghi chú thêm',
+        thang: 'Tháng báo cáo',
+        nam: 'Năm báo cáo',
+        thuong: 'Tiền thưởng thêm',
+        phat: 'Tiền phạt khấu trừ',
+        lyDoPhat: 'Lý do bị phạt',
+        maDon: 'Mã đơn nghỉ phép'
+    };
+    return map[key] || key;
+};
+
+const formatFriendlyValue = (val, key) => {
+    if (val === null || val === undefined || val === '') return '---';
+    
+    // Format tiền cho các key liên quan đến tiền
+    const moneyKeys = ['giaBan', 'tongTien', 'donGia', 'donGiaNhap', 'amount', 'luongCoBan', 'thuong', 'phat'];
+    if (moneyKeys.includes(key) || (typeof val === 'number' && val > 50000)) {
+        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
+    }
+
+    if (typeof val === 'boolean') return val ? 'Đang bật' : 'Đang tắt';
+    
+    // Format trạng thái
+    if (key === 'trangThai') {
+        if (val === 1 || val === '1') return 'Đang hoạt động / Kinh doanh';
+        if (val === 0 || val === '0') return 'Ngừng hoạt động / Tắt';
+        return val;
+    }
+
+    // Format ngày tháng nếu là chuỗi ISO
+    if (typeof val === 'string' && val.length > 15 && !isNaN(Date.parse(val))) {
+        return dayjs(val).format('DD/MM/YYYY HH:mm:ss');
+    }
+
+    return val;
 };
 
 const formatJson = (str) => {
